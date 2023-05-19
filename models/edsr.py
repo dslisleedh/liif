@@ -165,6 +165,21 @@ class EDSR(nn.Module):
                                    .format(name))
 
 
+class EDSRNM(EDSR):
+    def forward(self, x):
+        #x = self.sub_mean(x)
+        x = self.head(x)
+
+        res = self.body(x)
+        feats = res + x
+
+        if self.args.no_upsampling:
+            return feats
+        else:
+            return self.tail(feats)
+
+
+
 @register('edsr-baseline')
 def make_edsr_baseline(n_resblocks=16, n_feats=64, res_scale=1,
                        scale=2, no_upsampling=False, rgb_range=1):
@@ -195,3 +210,19 @@ def make_edsr(n_resblocks=32, n_feats=256, res_scale=0.1,
     args.rgb_range = rgb_range
     args.n_colors = 3
     return EDSR(args)
+
+
+@register('edsr-nm')
+def make_edsr_nm(n_resblocks=32, n_feats=256, res_scale=0.1,
+                 scale=2, no_upsampling=False, rgb_range=1, n_colors: int = 3):
+    args = Namespace()
+    args.n_resblocks = n_resblocks
+    args.n_feats = n_feats
+    args.res_scale = res_scale
+
+    args.scale = [scale]
+    args.no_upsampling = no_upsampling
+
+    args.rgb_range = rgb_range
+    args.n_colors = n_colors
+    return EDSRNM(args)
